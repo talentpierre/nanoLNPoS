@@ -1,5 +1,6 @@
 #include <WiFi.h>
-#include <WebServer.h>
+#include "configs.h"
+// #include <WebServer.h>
 #include <FS.h>
 #include <SPIFFS.h>
 using WebServerClass = WebServer;
@@ -248,11 +249,11 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
 int checker = 0;
 char maxdig[20];
 
-WebServerClass server;
-AutoConnect portal(server);
+// WebServerClass server;
+// AutoConnect portal(server);
 AutoConnectConfig config;
-AutoConnectAux elementsAux;
-AutoConnectAux saveAux;
+// AutoConnectAux elementsAux;
+// AutoConnectAux saveAux;
 
 void setup()
 {
@@ -276,44 +277,48 @@ void setup()
   File paramFile = FlashFS.open(PARAM_FILE, "r");
   if (paramFile)
   {
-    StaticJsonDocument<2500> doc;
-    DeserializationError error = deserializeJson(doc, paramFile.readString());
+//    StaticJsonDocument<2500> doc;
+//    DeserializationError error = deserializeJson(doc, paramFile.readString());
 
-    const JsonObject passRoot = doc[0];
-    const char *apPasswordChar = passRoot["value"];
-    const char *apNameChar = passRoot["name"];
-    if (String(apPasswordChar) != "" && String(apNameChar) == "password")
-    {
-      apPassword = apPasswordChar;
-    }
+//    const JsonObject passRoot = doc[0];
+//    const char *apPasswordChar = passRoot["value"];
+//    const char *apNameChar = passRoot["name"];
+//    if (String(apPasswordChar) != "" && String(apNameChar) == "password")
+//    {
+//      apPassword = apPasswordChar;
+//    }
 
-    const JsonObject maRoot = doc[1];
-    const char *masterKeyChar = maRoot["value"];
-    masterKey = masterKeyChar;
+//    const JsonObject maRoot = doc[1];
+//    const char *masterKeyChar = maRoot["value"];
+//    masterKey = masterKeyChar;
     if (masterKey != "")
     {
       menuItemCheck[2] = 1;
     }
 
-    const JsonObject serverRoot = doc[2];
-    const char *serverChar = serverRoot["value"];
-    lnbitsServer = serverChar;
+//    const JsonObject serverRoot = doc[2];
+//    const char *serverChar = serverRoot["value"];
+//    lnbitsServer = serverChar;
 
-    const JsonObject invoiceRoot = doc[3];
-    const char *invoiceChar = invoiceRoot["value"];
-    invoice = invoiceChar;
+//    const JsonObject invoiceRoot = doc[3];
+//    const char *invoiceChar = invoiceRoot["value"];
+//    invoice = invoiceChar;
+
+    invoice = invoiceKey;
     if (invoice != "")
     {
       menuItemCheck[0] = 1;
     }
 
-    const JsonObject lncurrencyRoot = doc[4];
-    const char *lncurrencyChar = lncurrencyRoot["value"];
-    lncurrency = lncurrencyChar;
+//    const JsonObject lncurrencyRoot = doc[4];
+//    const char *lncurrencyChar = lncurrencyRoot["value"];
+//    lncurrency = lncurrencyChar;
+    lncurrency = currency;
 
-    const JsonObject lnurlPoSRoot = doc[5];
-    const char *lnurlPoSChar = lnurlPoSRoot["value"];
-    const String lnurlPoS = lnurlPoSChar;
+//    const JsonObject lnurlPoSRoot = doc[5];
+//    const char *lnurlPoSChar = lnurlPoSRoot["value"];
+//    const String lnurlPoS = lnurlPoSChar;
+    const String lnurlPoS = LNURLP;
     baseURLPoS = getValue(lnurlPoS, ',', 0);
     secretPoS = getValue(lnurlPoS, ',', 1);
     currencyPoS = getValue(lnurlPoS, ',', 2);
@@ -322,9 +327,10 @@ void setup()
       menuItemCheck[1] = 1;
     }
 
-    const JsonObject lnurlATMRoot = doc[6];
-    const char *lnurlATMChar = lnurlATMRoot["value"];
-    const String lnurlATM = lnurlATMChar;
+//    const JsonObject lnurlATMRoot = doc[6];
+//    const char *lnurlATMChar = lnurlATMRoot["value"];
+//    const String lnurlATM = lnurlATMChar;
+    const String lnurlATM = LNURLW;
     baseURLATM = getValue(lnurlATM, ',', 0);
     secretATM = getValue(lnurlATM, ',', 1);
     currencyATM = getValue(lnurlATM, ',', 2);
@@ -333,12 +339,14 @@ void setup()
       menuItemCheck[3] = 1;
     }
 
-    const JsonObject lnurlATMMSRoot = doc[7];
-    const char *lnurlATMMSChar = lnurlATMMSRoot["value"];
+//    const JsonObject lnurlATMMSRoot = doc[7];
+//    const char *lnurlATMMSChar = lnurlATMMSRoot["value"];
+    const char *lnurlATMMSChar = atmserver;
     lnurlATMMS = lnurlATMMSChar;
 
-    const JsonObject lnurlATMPinRoot = doc[8];
-    const char *lnurlATMPinChar = lnurlATMPinRoot["value"];
+//    const JsonObject lnurlATMPinRoot = doc[8];
+//    const char *lnurlATMPinChar = lnurlATMPinRoot["value"];
+    const char *lnurlATMPinChar = atmpin;
     lnurlATMPin = lnurlATMPinChar;
   }
 
@@ -351,79 +359,79 @@ void setup()
   config.beginTimeout = 10000UL;
 
   // start portal (any key pressed on startup)
-  const char key = keypad.getKey();
-  if (key != NO_KEY)
-  {
-    // handle access point traffic
-    server.on("/", []() {
-      String content = "<h1>LNPoS</br>Free open-source bitcoin PoS</h1>";
-      content += AUTOCONNECT_LINK(COG_24);
-      server.send(200, "text/html", content);
-    });
-
-    elementsAux.load(FPSTR(PAGE_ELEMENTS));
-    elementsAux.on([](AutoConnectAux &aux, PageArgument &arg) {
-      File param = FlashFS.open(PARAM_FILE, "r");
-      if (param)
-      {
-        aux.loadElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
-        param.close();
-      }
-
-      if (portal.where() == "/posconfig")
-      {
-        File param = FlashFS.open(PARAM_FILE, "r");
-        if (param)
-        {
-          aux.loadElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
-          param.close();
-        }
-      }
-      return String();
-    });
-
-    saveAux.load(FPSTR(PAGE_SAVE));
-    saveAux.on([](AutoConnectAux &aux, PageArgument &arg) {
-      aux["caption"].value = PARAM_FILE;
-      File param = FlashFS.open(PARAM_FILE, "w");
-
-      if (param)
-      {
-        // save as a loadable set for parameters.
-        elementsAux.saveElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
-        param.close();
-
-        // read the saved elements again to display.
-        param = FlashFS.open(PARAM_FILE, "r");
-        aux["echo"].value = param.readString();
-        param.close();
-      }
-      else
-      {
-        aux["echo"].value = "Filesystem failed to open.";
-      }
-
-      return String();
-    });
-
-    config.immediateStart = true;
-    config.ticker = true;
-    config.apid = "LNPoS-" + String((uint32_t)ESP.getEfuseMac(), HEX);
-    config.psk = apPassword;
-    config.menuItems = AC_MENUITEM_CONFIGNEW | AC_MENUITEM_OPENSSIDS | AC_MENUITEM_RESET;
-    config.title = "LNPoS";
+//  const char key = keypad.getKey();
+//  if (key != NO_KEY)
+//  {
+//    // handle access point traffic
+//    server.on("/", []() {
+//      String content = "<h1>LNPoS</br>Free open-source bitcoin PoS</h1>";
+//      content += AUTOCONNECT_LINK(COG_24);
+//      server.send(200, "text/html", content);
+//    });
+//
+//    elementsAux.load(FPSTR(PAGE_ELEMENTS));
+//    elementsAux.on([](AutoConnectAux &aux, PageArgument &arg) {
+//      File param = FlashFS.open(PARAM_FILE, "r");
+//      if (param)
+//      {
+//        aux.loadElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
+//        param.close();
+//      }
+//
+//      if (portal.where() == "/posconfig")
+//      {
+//        File param = FlashFS.open(PARAM_FILE, "r");
+//        if (param)
+//        {
+//          aux.loadElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
+//          param.close();
+//        }
+//      }
+//      return String();
+//    });
+//
+//    saveAux.load(FPSTR(PAGE_SAVE));
+//    saveAux.on([](AutoConnectAux &aux, PageArgument &arg) {
+//      aux["caption"].value = PARAM_FILE;
+//      File param = FlashFS.open(PARAM_FILE, "w");
+//
+//      if (param)
+//      {
+//        // save as a loadable set for parameters.
+//        elementsAux.saveElement(param, {"password", "masterkey", "server", "invoice", "lncurrency", "lnurlpos", "lnurlatm", "lnurlatmms", "lnurlatmpin"});
+//        param.close();
+//
+//        // read the saved elements again to display.
+//        param = FlashFS.open(PARAM_FILE, "r");
+//        aux["echo"].value = param.readString();
+//        param.close();
+//      }
+//      else
+//      {
+//        aux["echo"].value = "Filesystem failed to open.";
+//      }
+//
+//      return String();
+//    });
+//
+//    config.immediateStart = true;
+//    config.ticker = true;
+//    config.apid = "LNPoS-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+//    config.psk = apPassword;
+//    config.menuItems = AC_MENUITEM_CONFIGNEW | AC_MENUITEM_OPENSSIDS | AC_MENUITEM_RESET;
+//    config.title = "LNPoS";
 
     // start access point
-    portalLaunch();
-
-    portal.join({elementsAux, saveAux});
-    portal.config(config);
-    portal.begin();
-    while (true)
-    {
-      portal.handleClient();
-    }
-  }
+//    portalLaunch();
+//
+//    portal.join({elementsAux, saveAux});
+//    portal.config(config);
+//    portal.begin();
+//    while (true)
+//    {
+//      portal.handleClient();
+//    }
+//  }
 
   // connect to configured WiFi
   if (menuItemCheck[0])
