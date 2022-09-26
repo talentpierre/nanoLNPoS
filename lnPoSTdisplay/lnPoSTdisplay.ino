@@ -90,144 +90,6 @@ enum InvoiceType {
 };
 
 // custom access point pages
-static const char PAGE_ELEMENTS[] PROGMEM = R"(
-{
-  "uri": "/posconfig",
-  "title": "PoS Options",
-  "menu": true,
-  "element": [
-    {
-      "name": "text",
-      "type": "ACText",
-      "value": "LNPoS options",
-      "style": "font-family:Arial;font-size:16px;font-weight:400;color:#191970;margin-botom:15px;"
-    },
-    {
-      "name": "password",
-      "type": "ACInput",
-      "label": "Password for PoS AP WiFi",
-      "value": "ToTheMoon1"
-    },
-
-    {
-      "name": "offline",
-      "type": "ACText",
-      "value": "Onchain *optional",
-      "style": "font-family:Arial;font-size:16px;font-weight:400;color:#191970;margin-botom:15px;"
-    },
-    {
-      "name": "masterkey",
-      "type": "ACInput",
-      "label": "Master Public Key"
-    },
-
-    {
-      "name": "heading1",
-      "type": "ACText",
-      "value": "Lightning *optional",
-      "style": "font-family:Arial;font-size:16px;font-weight:400;color:#191970;margin-botom:15px;"
-    },
-    {
-      "name": "server",
-      "type": "ACInput",
-      "label": "LNbits Server"
-    },
-    {
-      "name": "invoice",
-      "type": "ACInput",
-      "label": "Wallet Invoice Key"
-    },
-    {
-      "name": "lncurrency",
-      "type": "ACInput",
-      "label": "PoS Currency ie EUR"
-    },
-    {
-      "name": "heading2",
-      "type": "ACText",
-      "value": "Offline Lightning *optional",
-      "style": "font-family:Arial;font-size:16px;font-weight:400;color:#191970;margin-botom:15px;"
-    },
-    {
-      "name": "lnurlpos",
-      "type": "ACInput",
-      "label": "LNURLPoS String"
-    },
-    {
-      "name": "heading3",
-      "type": "ACText",
-      "value": "Offline Lightning *optional",
-      "style": "font-family:Arial;font-size:16px;font-weight:400;color:#191970;margin-botom:15px;"
-    },
-    {
-      "name": "lnurlatm",
-      "type": "ACInput",
-      "label": "LNURLATM String"
-    },
-    {
-      "name": "lnurlatmms",
-      "type": "ACInput",
-      "value": "mempool.space",
-      "label": "mempool.space server"
-    },
-    {
-      "name": "lnurlatmpin",
-      "type": "ACInput",
-      "value": "878787",
-      "label": "LNURLATM pin String"
-    },
-    {
-      "name": "load",
-      "type": "ACSubmit",
-      "value": "Load",
-      "uri": "/posconfig"
-    },
-    {
-      "name": "save",
-      "type": "ACSubmit",
-      "value": "Save",
-      "uri": "/save"
-    },
-    {
-      "name": "adjust_width",
-      "type": "ACElement",
-      "value": "<script type='text/javascript'>window.onload=function(){var t=document.querySelectorAll('input[]');for(i=0;i<t.length;i++){var e=t[i].getAttribute('placeholder');e&&t[i].setAttribute('size',e.length*.8)}};</script>"
-    }
-  ]
- }
-)";
-
-static const char PAGE_SAVE[] PROGMEM = R"(
-{
-  "uri": "/save",
-  "title": "Elements",
-  "menu": false,
-  "element": [
-    {
-      "name": "caption",
-      "type": "ACText",
-      "format": "Elements have been saved to %s",
-      "style": "font-family:Arial;font-size:18px;font-weight:400;color:#191970"
-    },
-    {
-      "name": "validated",
-      "type": "ACText",
-      "style": "color:red"
-    },
-    {
-      "name": "echo",
-      "type": "ACText",
-      "style": "font-family:monospace;font-size:small;white-space:pre;"
-    },
-    {
-      "name": "ok",
-      "type": "ACSubmit",
-      "value": "OK",
-      "uri": "/posconfig"
-    }
-  ]
-}
-)";
 
 SHA256 h;
 TFT_eSPI tft = TFT_eSPI();
@@ -249,11 +111,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, rows, cols);
 int checker = 0;
 char maxdig[20];
 
-// WebServerClass server;
-// AutoConnect portal(server);
 AutoConnectConfig config;
-// AutoConnectAux elementsAux;
-// AutoConnectAux saveAux;
 
 void setup()
 {
@@ -273,84 +131,44 @@ void setup()
   if(format == true){
     SPIFFS.format(); 
   }
-  // get the saved details and store in global variables
-  File paramFile = FlashFS.open(PARAM_FILE, "r");
-  if (paramFile)
+
+  if (masterKey != "")
   {
-//    StaticJsonDocument<2500> doc;
-//    DeserializationError error = deserializeJson(doc, paramFile.readString());
-
-//    const JsonObject passRoot = doc[0];
-//    const char *apPasswordChar = passRoot["value"];
-//    const char *apNameChar = passRoot["name"];
-//    if (String(apPasswordChar) != "" && String(apNameChar) == "password")
-//    {
-//      apPassword = apPasswordChar;
-//    }
-
-//    const JsonObject maRoot = doc[1];
-//    const char *masterKeyChar = maRoot["value"];
-//    masterKey = masterKeyChar;
-    if (masterKey != "")
-    {
-      menuItemCheck[2] = 1;
-    }
-
-//    const JsonObject serverRoot = doc[2];
-//    const char *serverChar = serverRoot["value"];
-//    lnbitsServer = serverChar;
-
-//    const JsonObject invoiceRoot = doc[3];
-//    const char *invoiceChar = invoiceRoot["value"];
-//    invoice = invoiceChar;
-
-    invoice = invoiceKey;
-    if (invoice != "")
-    {
-      menuItemCheck[0] = 1;
-    }
-
-//    const JsonObject lncurrencyRoot = doc[4];
-//    const char *lncurrencyChar = lncurrencyRoot["value"];
-//    lncurrency = lncurrencyChar;
-    lncurrency = currency;
-
-//    const JsonObject lnurlPoSRoot = doc[5];
-//    const char *lnurlPoSChar = lnurlPoSRoot["value"];
-//    const String lnurlPoS = lnurlPoSChar;
-    const String lnurlPoS = LNURLP;
-    baseURLPoS = getValue(lnurlPoS, ',', 0);
-    secretPoS = getValue(lnurlPoS, ',', 1);
-    currencyPoS = getValue(lnurlPoS, ',', 2);
-    if (secretPoS != "")
-    {
-      menuItemCheck[1] = 1;
-    }
-
-//    const JsonObject lnurlATMRoot = doc[6];
-//    const char *lnurlATMChar = lnurlATMRoot["value"];
-//    const String lnurlATM = lnurlATMChar;
-    const String lnurlATM = LNURLW;
-    baseURLATM = getValue(lnurlATM, ',', 0);
-    secretATM = getValue(lnurlATM, ',', 1);
-    currencyATM = getValue(lnurlATM, ',', 2);
-    if (secretATM != "")
-    {
-      menuItemCheck[3] = 1;
-    }
-
-//    const JsonObject lnurlATMMSRoot = doc[7];
-//    const char *lnurlATMMSChar = lnurlATMMSRoot["value"];
-    const char *lnurlATMMSChar = atmserver;
-    lnurlATMMS = lnurlATMMSChar;
-
-//    const JsonObject lnurlATMPinRoot = doc[8];
-//    const char *lnurlATMPinChar = lnurlATMPinRoot["value"];
-    const char *lnurlATMPinChar = atmpin;
-    lnurlATMPin = lnurlATMPinChar;
+    menuItemCheck[2] = 1;
   }
 
-  paramFile.close();
+  invoice = invoiceKey;
+  if (invoice != "")
+  {
+    menuItemCheck[0] = 1;
+  }
+
+  lncurrency = currency;
+
+  const String lnurlPoS = LNURLP;
+  baseURLPoS = getValue(lnurlPoS, ',', 0);
+  secretPoS = getValue(lnurlPoS, ',', 1);
+  currencyPoS = getValue(lnurlPoS, ',', 2);
+  if (secretPoS != "")
+  {
+    menuItemCheck[1] = 1;
+  }
+
+  const String lnurlATM = LNURLW;
+  baseURLATM = getValue(lnurlATM, ',', 0);
+  secretATM = getValue(lnurlATM, ',', 1);
+  currencyATM = getValue(lnurlATM, ',', 2);
+  if (secretATM != "")
+  {
+    menuItemCheck[3] = 1;
+  }
+
+  const char *lnurlATMMSChar = atmserver;
+  lnurlATMMS = lnurlATMMSChar;
+
+  const char *lnurlATMPinChar = atmpin;
+  lnurlATMPin = lnurlATMPinChar;
+  }
 
   // general WiFi setting
   config.autoReset = false;
